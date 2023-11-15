@@ -4,7 +4,7 @@
 
 #include "TXLib.h"
 #include "tree.h"
-//#include "list.h"
+#include "list.h"
 
 #define AKIN_CTOR(tree) \
         akin_ctor (tree, #tree, __FILE__, __func__, __LINE__)
@@ -28,9 +28,11 @@ Error   add_person          (Node* node);
 Actions choose_action       ();
 Error   do_action           ();
 Error   action_with_base    (Tree* tree, Actions action);
-//Error   define              (Tree* tree);
-//void    print_define        (Node* node, List* list);
-//bool    find                (Node* node, char name[], List* list, int val_list);
+Error   define              (Tree* tree);
+void    print_define        (Node* node, List* list);
+bool    find                (Node* node, char name[], List* list, int val_list);
+void    get_name            (char* name, char* text);
+void    print_compare       (char* name1, char* name2, List* list1, List* list2, Node* node1, Node* node2);
 Error   compare             (Tree* tree);
 
 #endif //AKINATOR_HEADER

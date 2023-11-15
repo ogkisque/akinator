@@ -1,5 +1,7 @@
 #include "tree.h"
 
+#include "Dotter.h"
+
 const char* NAME_DOT        = "pic.dot";
 const int   MAX_TEXT_SIZE   = 200;
 const int   MAX_SIZE        = 100;

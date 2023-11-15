@@ -8,7 +8,6 @@
 
 #include "colors.h"
 #include "error.h"
-#include "Dotter.h"
 
 #define RETURN_ERROR_AND_DUMP(list, code, message)                                          \
         {                                                                                   \
