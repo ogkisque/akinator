@@ -486,14 +486,18 @@ void dtRender (const char From [], const char To [], const char Type [], const b
 {
     const int ComandSize = 200;
 
-    char Comand [ComandSize] = "";
+    char Comand0[ComandSize] = "";
+    char Comand[ComandSize] = "";
+    char newFrom[ComandSize] = "";
 
     const int OtherSymbols = 14;
 
     if (strlen (__DOT__) + strlen (From) + strlen (To) + strlen (Type) + OtherSymbols >= ComandSize) dtError ("Names too long!");
+    sprintf (newFrom, "utf8-%s", From);
+    sprintf (Comand0, "iconv -f cp1251 -t utf-8 %s > %s", From, newFrom);
+    system (Comand0);
 
-    sprintf (Comand, "%s -T %s %s -o %s", __DOT__, Type, From, To);
-
+    sprintf (Comand, "%s -T %s %s -o %s", __DOT__, Type, newFrom, To);
     system (Comand);
 
     if (Show)

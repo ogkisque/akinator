@@ -140,6 +140,7 @@ Error define (Tree* tree)
     MAKE_LIST(&list, 8, true, true);
 
     char name[MAX_SIZE] = "";
+    while (getchar () != '\n') ;
     get_name (name, "Кого мне нужно определить?");
 
     bool is_find = find (tree->root, name, list, -1);
@@ -172,17 +173,18 @@ void print_define (Node* node, List* list)
 
         if (val == 1)
         {
-            printf ("%s", node->str);
-            txSpeak ("%s", node->str);
+            printf ("%s ", node->str);
+            txSpeak ("%s ", node->str);
             node = node->left;
         }
         else
         {
-            printf ("не %s", node->str);
-            txSpeak ("не %s", node->str);
+            printf ("не %s ", node->str);
+            txSpeak ("не %s ", node->str);
             node = node->right;
         }
     }
+    printf ("\n");
 }
 
 bool find (Node* node, char name[], List* list, int val_list)
@@ -210,9 +212,8 @@ bool find (Node* node, char name[], List* list, int val_list)
 
 void get_name (char* name, char* text)
 {
-    printf ("%s.\n", text);
-    txSpeak ("text");
-    while (getchar () != '\n') ;
+    printf ("%s\n", text);
+    txSpeak (text);
     fgets (name, MAX_SIZE, stdin);
     name[strlen (name) - 1] = '\0';
 }
@@ -229,6 +230,7 @@ Error compare (Tree* tree)
 
     char name1[MAX_SIZE] = "";
     char name2[MAX_SIZE] = "";
+    while (getchar () != '\n') ;
     get_name (name1, "Введите первый объект");
     get_name (name2, "Введите второй объект");
 
@@ -239,6 +241,7 @@ Error compare (Tree* tree)
         txSpeak ("Первого объекта нет");
         RETURN_ERROR(CORRECT, "");
     }
+
     bool is_find2 = find (tree->root, name2, list2, -1);
     if (!is_find2)
     {
@@ -252,6 +255,8 @@ Error compare (Tree* tree)
     list_pop_begin (list2, &it);
 
     print_compare (name1, name2, list1, list2, tree->root, tree->root);
+    list_dtor (list1);
+    list_dtor (list2);
     RETURN_ERROR(CORRECT, "");
 }
 
@@ -271,50 +276,63 @@ void print_compare (char* name1, char* name2, List* list1, List* list2, Node* no
         txSpeak ("%s и %s ", name1, name2);
     }
 
+    bool was_print = false;
     while ((val1 == val2) && (it1.index != it1_end.index) && (it2.index != it2_end.index))
     {
+        was_print = true;
         if (val1 == 1)
         {
-            printf ("%s, ", node1->str);
-            txSpeak ("%s, ", node1->str);
+            printf ("%s ", node1->str);
+            txSpeak ("%s ", node1->str);
             node1 = node1->left;
             node2 = node2->left;
         }
         else
         {
-            printf ("не %s, ", node1->str);
-            txSpeak ("не %s, ", node1->str);
+            printf ("не %s ", node1->str);
+            txSpeak ("не %s ", node1->str);
             node1 = node1->right;
             node2 = node2->right;
         }
         it1 = next_it (it1);
         it2 = next_it (it2);
-        get_value (&it1, &val1);
-        get_value (&it2, &val2);
+        if (it1.index != it1_end.index)
+            get_value (&it1, &val1);
+        if (it2.index != it2_end.index)
+            get_value (&it2, &val2);
     }
 
-    if (it1.index != it1_end.index)
+    if (it1.index != it1_end.index && was_print)
     {
-        printf ("но %s также ", name1);
-        txSpeak ("но %s также ", name1);
+        if (was_print)
+        {
+            printf ("но %s при этом ", name1);
+            txSpeak ("но %s при этом ", name1);
+        }
+        else
+        {
+            printf ("%s ", name1);
+            txSpeak ("%s", name1);
+        }
     }
 
     while (it1.index != it1_end.index)
     {
         if (val1 == 1)
         {
-            printf ("%s, ", node1->str);
-            txSpeak ("%s, ", node1->str);
+            printf ("%s ", node1->str);
+            txSpeak ("%s ", node1->str);
             node1 = node1->left;
         }
         else
         {
-            printf ("не %s, ", node1->str);
-            txSpeak ("не %s, ", node1->str);
+            printf ("не %s ", node1->str);
+            txSpeak ("не %s ", node1->str);
             node1 = node1->right;
         }
         it1 = next_it (it1);
-        get_value (&it1, &val1);
+        if (it1.index != it1_end.index)
+            get_value (&it1, &val1);
     }
 
     if (it2.index != it2_end.index)
@@ -325,21 +343,23 @@ void print_compare (char* name1, char* name2, List* list1, List* list2, Node* no
 
     while (it2.index != it2_end.index)
     {
-        if (val1 == 1)
+        if (val2 == 1)
         {
-            printf ("%s, ", node2->str);
-            txSpeak ("%s, ", node2->str);
+            printf ("%s ", node2->str);
+            txSpeak ("%s ", node2->str);
             node2 = node2->left;
         }
         else
         {
-            printf ("не %s, ", node2->str);
-            txSpeak ("не %s, ", node2->str);
+            printf ("не %s ", node2->str);
+            txSpeak ("не %s ", node2->str);
             node2 = node2->right;
         }
         it2 = next_it (it2);
-        get_value (&it2, &val2);
+        if (it2.index != it2_end.index)
+            get_value (&it2, &val2);
     }
+    printf ("\n");
 }
 
 Error do_action ()
@@ -397,13 +417,13 @@ Error do_action ()
                 break;
 
             case DEFINE:
-                //error = define (&tree);
-                //PARSE_ERROR(&tree, error);
+                error = define (&tree);
+                PARSE_ERROR(&tree, error);
                 break;
 
             case COMPARE:
-                //error = compare (&tree);
-                //PARSE_ERROR(&tree, error);
+                error = compare (&tree);
+                PARSE_ERROR(&tree, error);
                 break;
 
             case END:

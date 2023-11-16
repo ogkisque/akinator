@@ -140,8 +140,9 @@ Error nodes_read (Node** node, FILE* file, Formats format)
     char text[MAX_SIZE] = "";
     fscanf (file, "%s ", text);
     if (strcmp (text, "{") != 0)
+    {
         RETURN_ERROR(CORRECT, "");
-
+    }
     Error error = new_node (0, node);
 
     if (format == PRE)
@@ -173,14 +174,22 @@ Error nodes_read (Node** node, FILE* file, Formats format)
 Error read_value (FILE* file, Node** node)
 {
     char value[MAX_SIZE] = "";
-    fscanf (file, "<%s> ", value);
-    value[strlen (value) - 1] = '\0';
+    read_name (file, value);
 
     (*node)->str = strdup (value);
     if (!((*node)->str))
         RETURN_ERROR(MEM_ALLOC, "Error in allocation memory for value in node.");
 
     RETURN_ERROR(CORRECT, "");
+}
+
+void read_name (FILE* file, char* value)
+{
+    char c = '<';
+    fscanf (file, "%c", &c);
+    fscanf (file, "%c", &c);
+    for (int i = 0; c != '>'; fscanf (file, "%c", &c), i++)
+        value[i] = c;
 }
 
 void print_error (Error error)

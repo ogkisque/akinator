@@ -1,5 +1,8 @@
 #include "list.h"
+
+#ifdef DOT
 #include "Dotter.h"
+#endif
 
 #define RETURN_ERROR(code, message) \
         return Error {code, __LINE__, __FILE__, __func__, message}
@@ -17,7 +20,9 @@
             return error;                   \
         }
 
+#ifdef DOT
 const char* NAME_DOT        = "pic.dot";
+#endif
 const int   MAX_TEXT_SIZE   = 200;
 const int   REALLOC_STEP    = 2;
 const int   NAME_SIZE       = 50;
@@ -65,10 +70,12 @@ Error   list_verify             (List* list);
 void    fill_nodes              (List* list, ssize_t start, ssize_t end);
 void    list_dump               (List* list, Error error);
 void    list_print_error        (Error error);
+#ifdef DOT
 void    list_graph_dump         (List* list, Error error);
 void    dump_nodes              (List* list);
 void    dump_links              (List* list);
 void    dump_error              (List* list, Error error);
+#endif
 bool    prev_of_next            (List* list);
 bool    is_cycles               (List* list);
 #ifdef FOOTBALL_CHECK
@@ -443,6 +450,7 @@ void list_print_error (Error error)
             error.file, error.func, error.line);
 }
 
+#ifdef DOT
 void list_graph_dump (List* list, Error error)
 {
     dtBegin (NAME_DOT);
@@ -519,6 +527,7 @@ void dump_error (List* list, Error error)
 
     dtNode (list->size + 1, text);
 }
+#endif
 
 void fill_nodes (List* list, ssize_t start, ssize_t end)
 {

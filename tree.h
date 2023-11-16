@@ -72,4 +72,5 @@ void    tree_dump           (Tree* tree, Error error);
 void    nodes_graph_dump    (Node* node, size_t counter);
 void    error_graph_dump    (Tree* tree, Error error);
 void    print_error         (Error error);
+void    read_name           (FILE* file, char* value);
 #endif //TREE_HEADER
