@@ -1,7 +1,16 @@
 #include "akinator.h"
 
-char        UNKNOWN[]   = "хз";
-const int   MAX_SIZE    = 100;
+char            UNKNOWN[]       = "хз";
+const int       MAX_SIZE        = 100;
+const char*     TEMP_FILE_NAME  = "temporary.txt";
+const char*     INFO_FILE_NAME  = "files_info.txt";
+const char*     FILES_DIR       = "files/";
+
+
+#define PRINT_SAY(...)          \
+        printf (__VA_ARGS__);   \
+        txSpeak (__VA_ARGS__);
+
 
 Error akin_ctor (Tree* tree, const char* name, const char* file, const char* func, int line)
 {
@@ -22,8 +31,7 @@ Error guess (Node* node)
     if (!node)
         RETURN_ERROR(NULL_POINTER, "Null pointer of node.");
 
-    printf ("Твой объект %s? (да или нет)\n", node->str);
-    txSpeak ("Твой объект %s? (да или нет)\n", node->str);
+    PRINT_SAY("Твой объект %s? (да или нет)\n", node->str);
     char ans[4] = "";
     scanf ("%s", ans);
 
@@ -38,8 +46,7 @@ Error guess (Node* node)
     {
         if (strcmp (ans, "да") == 0)
         {
-            printf ("Я гений\n");
-            txSpeak ("Я гений");
+            PRINT_SAY("Я гений\n");
             RETURN_ERROR(CORRECT, "");
         }
         else
@@ -57,12 +64,10 @@ Error add_person (Node* node)
     while (getchar () != '\n') ;
     char name[MAX_SIZE] = "";
     char differ[MAX_SIZE] = "";
-    printf ("Как зовут твой объект?\n");
-    txSpeak ("Как зовут твой объект?");
+    PRINT_SAY("Как зовут твой объект?\n");
     fgets (name, MAX_SIZE, stdin);
     name[strlen (name) - 1] = '\0';
-    printf ("Чем твой объект отличается от %s?\n", node->str);
-    txSpeak ("Чем твой объект отличается от %s?\n", node->str);
+    PRINT_SAY("Чем твой объект отличается от %s?\n", node->str);
     fgets (differ, MAX_SIZE, stdin);
     differ[strlen (differ) - 1] = '\0';
 
@@ -79,56 +84,116 @@ Error add_person (Node* node)
     RETURN_ERROR(CORRECT, "");
 }
 
+void print_file_names (FILE* file)
+{
+    char name[MAX_SIZE] = "";
+    char format[MAX_SIZE] = "";
+    while (fscanf (file, "%s %s", name, format) == 2)
+        printf ("%s\n", name);
+}
+
+Formats parse_format (char* format)
+{
+    if (strcmp (format, "PRE"))
+        return PRE;
+    if (strcmp (format, "INF"))
+        return INF;
+    if (strcmp (format, "POST"))
+        return POST;
+    return PRE;
+}
+
+Formats get_format (FILE* file, char* name_file)
+{
+    char name[MAX_SIZE] = "";
+    char format[MAX_SIZE] = "";
+    while (fscanf (file, "%s %s", name, format) == 2)
+    {
+        if (strcmp (name_file, name) == 0)
+            return parse_format (format);
+    }
+    return PRE;
+}
+
 Error action_with_base (Tree* tree, Actions action)
 {
+    FILE* info = fopen (INFO_FILE_NAME, "r");
+
     while (getchar () != '\n') ;
-    printf ("Введите имя файла.\n");
-    txSpeak ("Введите имя файла");
+    if (action == OPEN_BASE)
+    {
+        PRINT_SAY("Введите имя файла для открытия. Вам доступны:\n");
+    }
+    else
+    {
+        PRINT_SAY("Введите имя файла для сохранения. Можете создать новый либо сохранить в следующие:\n");
+    }
+    print_file_names (info);
+
     char name[MAX_SIZE] = "";
     fgets (name, MAX_SIZE, stdin);
     name[strlen (name) - 1] = '\0';
+    char file_name[MAX_SIZE] = "";
+    strcpy (file_name, FILES_DIR);
+    strcat (file_name, name);
 
     FILE* file = NULL;
+    FILE* new_info = NULL;
     if (action == OPEN_BASE)
-        file = fopen (name, "r");
+    {
+        file = fopen (file_name, "r");
+    }
     else
-        file = fopen (name, "w");
+    {
+        file = fopen (file_name, "w");
+    }
 
     if (!file)
     {
-        printf ("Такого файла нет.\n");
-        txSpeak ("Такого файла нет");
+        PRINT_SAY("Такого файла нет.\n");
         RETURN_ERROR(CORRECT, "");
     }
 
-    printf ("Введите формат хранения дерева в базе. (PRE, INF, POST)\n");
-    txSpeak ("Введите формат хранения дерева в базе");
-    fgets (name, MAX_SIZE, stdin);
-    name[strlen (name) - 1] = '\0';
     Error error = {};
     error.code = CORRECT;
 
-    Formats format = PRE;
-    if (strcmp (name, "PRE") == 0)
-        format = PRE;
-    else if (strcmp (name, "INF") == 0)
-        format = INF;
-    else if (strcmp (name, "POST") == 0)
-        format =  POST;
+    if (action == OPEN_BASE)
+    {
+        Formats format = get_format (info, name);
+        error = nodes_read (&(tree->root), file, format);
+        fclose (info);
+    }
     else
     {
-        printf ("Некорректный формат.\n");
-        txSpeak ("Некорректный формат");
-        RETURN_ERROR(CORRECT, "");
+        fclose (info);
+        new_info = fopen (INFO_FILE_NAME, "a");
+        add_file (new_info, name);
+        error = nodes_print (tree->root, file, PRE);
+        fclose (new_info);
     }
-
-    if (action == OPEN_BASE)
-        error = nodes_read (&(tree->root), file, format);
-    else
-        error = nodes_print (tree->root, file, format);
 
     fclose (file);
     return error;
+}
+
+void add_file (FILE* info, char* file_name)
+{
+    if (have_name (info, file_name))
+        return;
+
+    fprintf (info, "%s PRE", file_name);
+}
+
+bool have_name (FILE* info, char* file_name)
+{
+    char name[MAX_SIZE] = "";
+    char format[MAX_SIZE] = "";
+    while (fscanf (info, "%s %s", name, format) == 2)
+    {
+        if (strcmp (file_name, name) == 0)
+            return true;
+    }
+    return false;
 }
 
 Error define (Tree* tree)
@@ -146,16 +211,14 @@ Error define (Tree* tree)
     bool is_find = find (tree->root, name, list, -1);
     if (!is_find)
     {
-        printf ("Нет такого.\n");
-        txSpeak ("Нет такого");
+        PRINT_SAY("Нет такого.\n");
         RETURN_ERROR(CORRECT, "");
     }
 
     Iterator it = {};
     list_pop_begin (list, &it);
 
-    printf ("%s ", name);
-    txSpeak ("%s ", name);
+    PRINT_SAY("%s ", name);
     print_define (tree->root, list);
     list_dtor (list);
     RETURN_ERROR(CORRECT, "");
@@ -173,14 +236,12 @@ void print_define (Node* node, List* list)
 
         if (val == 1)
         {
-            printf ("%s ", node->str);
-            txSpeak ("%s ", node->str);
+            PRINT_SAY("%s ", node->str);
             node = node->left;
         }
         else
         {
-            printf ("не %s ", node->str);
-            txSpeak ("не %s ", node->str);
+            PRINT_SAY("не %s ", node->str);
             node = node->right;
         }
     }
@@ -212,8 +273,7 @@ bool find (Node* node, char name[], List* list, int val_list)
 
 void get_name (char* name, char* text)
 {
-    printf ("%s\n", text);
-    txSpeak (text);
+    PRINT_SAY("%s\n", text);
     fgets (name, MAX_SIZE, stdin);
     name[strlen (name) - 1] = '\0';
 }
@@ -237,16 +297,14 @@ Error compare (Tree* tree)
     bool is_find1 = find (tree->root, name1, list1, -1);
     if (!is_find1)
     {
-        printf ("Первого объекта нет.\n");
-        txSpeak ("Первого объекта нет");
+        PRINT_SAY("Первого объекта нет.\n");
         RETURN_ERROR(CORRECT, "");
     }
 
     bool is_find2 = find (tree->root, name2, list2, -1);
     if (!is_find2)
     {
-        printf ("Второго объекта нет.\n");
-        txSpeak ("Второго объекта нет");
+        PRINT_SAY("Второго объекта нет.\n");
         RETURN_ERROR(CORRECT, "");
     }
 
@@ -272,8 +330,7 @@ void print_compare (char* name1, char* name2, List* list1, List* list2, Node* no
     get_value (&it2, &val2);
     if (val1 == val2)
     {
-        printf ("%s и %s ", name1, name2);
-        txSpeak ("%s и %s ", name1, name2);
+        PRINT_SAY("%s и %s ", name1, name2);
     }
 
     bool was_print = false;
@@ -282,15 +339,13 @@ void print_compare (char* name1, char* name2, List* list1, List* list2, Node* no
         was_print = true;
         if (val1 == 1)
         {
-            printf ("%s ", node1->str);
-            txSpeak ("%s ", node1->str);
+            PRINT_SAY("%s ", node1->str);
             node1 = node1->left;
             node2 = node2->left;
         }
         else
         {
-            printf ("не %s ", node1->str);
-            txSpeak ("не %s ", node1->str);
+            PRINT_SAY("не %s ", node1->str);
             node1 = node1->right;
             node2 = node2->right;
         }
@@ -306,13 +361,11 @@ void print_compare (char* name1, char* name2, List* list1, List* list2, Node* no
     {
         if (was_print)
         {
-            printf ("но %s при этом ", name1);
-            txSpeak ("но %s при этом ", name1);
+            PRINT_SAY("но %s при этом ", name1);
         }
         else
         {
-            printf ("%s ", name1);
-            txSpeak ("%s", name1);
+            PRINT_SAY("%s ", name1);
         }
     }
 
@@ -320,14 +373,12 @@ void print_compare (char* name1, char* name2, List* list1, List* list2, Node* no
     {
         if (val1 == 1)
         {
-            printf ("%s ", node1->str);
-            txSpeak ("%s ", node1->str);
+            PRINT_SAY("%s ", node1->str);
             node1 = node1->left;
         }
         else
         {
-            printf ("не %s ", node1->str);
-            txSpeak ("не %s ", node1->str);
+            PRINT_SAY("не %s ", node1->str);
             node1 = node1->right;
         }
         it1 = next_it (it1);
@@ -336,23 +387,18 @@ void print_compare (char* name1, char* name2, List* list1, List* list2, Node* no
     }
 
     if (it2.index != it2_end.index)
-    {
-        printf ("а %s ", name2);
-        txSpeak ("а %s ", name2);
-    }
+        PRINT_SAY("а %s ", name2);
 
     while (it2.index != it2_end.index)
     {
         if (val2 == 1)
         {
-            printf ("%s ", node2->str);
-            txSpeak ("%s ", node2->str);
+            PRINT_SAY("%s ", node2->str);
             node2 = node2->left;
         }
         else
         {
-            printf ("не %s ", node2->str);
-            txSpeak ("не %s ", node2->str);
+            PRINT_SAY("не %s ", node2->str);
             node2 = node2->right;
         }
         it2 = next_it (it2);
@@ -362,12 +408,28 @@ void print_compare (char* name1, char* name2, List* list1, List* list2, Node* no
     printf ("\n");
 }
 
+void greetings (Tree* tree)
+{
+    PRINT_SAY("Привет, вернуться к состоянию, на котором ты закончил(а) в предыдущий раз? (да или нет)\n");
+
+    char ans[5] = "";
+    scanf ("%s", ans);
+    if (ans == "нет")
+        return;
+
+    FILE* file = fopen (TEMP_FILE_NAME, "r");
+    nodes_read (&(tree->root), file, PRE);
+    fclose (file);
+}
+
 Error do_action ()
 {
     Actions action = INCORRECT;
     Tree tree = {};
     Error error = {};
     AKIN_CTOR(&tree);
+    greetings (&tree);
+    FILE* file = fopen (TEMP_FILE_NAME, "w");
 
     while (action != END)
     {
@@ -375,8 +437,7 @@ Error do_action ()
         switch (action)
         {
             case INCORRECT:
-                printf ("Неверное действие.\n");
-                txSpeak ("Неверное действие");
+                PRINT_SAY ("Неверное действие\n")
                 break;
 
             case OPEN_BASE:
@@ -385,15 +446,13 @@ Error do_action ()
                 AKIN_CTOR(&tree);
                 error = action_with_base (&tree, action);
                 PARSE_ERROR(&tree, error);
-                printf ("База открыта.\n");
-                txSpeak ("База открыта");
+                PRINT_SAY ("База открыта\n")
                 break;
 
             case SAVE_BASE:
                 error = action_with_base (&tree, action);
                 PARSE_ERROR(&tree, error);
-                printf ("База сохранена.\n");
-                txSpeak ("База сохранена");
+                PRINT_SAY ("База сохранена\n")
                 break;
 
             case NEW_BASE:
@@ -403,8 +462,7 @@ Error do_action ()
                     PARSE_ERROR(&tree, error);
                     AKIN_CTOR(&tree);
                 }
-                printf ("Новая база создана.\n");
-                txSpeak ("Новая база создана");
+                PRINT_SAY ("Новая база создана\n")
                 break;
 
             case GUESS:
@@ -427,14 +485,15 @@ Error do_action ()
                 break;
 
             case END:
+                nodes_print (tree.root, file, PRE);
                 break;
 
             default:
                 break;
         }
     }
-    printf ("Пока.\n");
-    txSpeak ("Пока");
+    PRINT_SAY ("Пока\n")
+    fclose (file);
     RETURN_ERROR(CORRECT, "");
 }
 

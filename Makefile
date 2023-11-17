@@ -8,15 +8,16 @@ CFLAGS = -c -g -Wshadow -Winit-self -Wredundant-decls -Wcast-align\
 -Wsign-promo -Wstack-usage=8192 -Wstrict-aliasing -Wstrict-null-sentinel\
 -Wtype-limits -Wwrite-strings -Werror=vla -D_DEBUG -D_EJUDGE_CLIENT_SIDE
 
-OBJ = main.o akinator.o tree.o list.o
+OBJDIR = obj
+OBJ = $(OBJDIR)/main.o $(OBJDIR)/akinator.o $(OBJDIR)/tree.o $(OBJDIR)/list.o
 
 all: akin.exe
 
 akin.exe: $(OBJ)
 	$(CC) $^ -o $@
 
-%.o: %.cpp
-	$(CC) $(CFLAGS) $<
+$(OBJDIR)/%.o: %.cpp
+	$(CC) $(CFLAGS) -o $@ $<
 
 .PHONY: clean all
 

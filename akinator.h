@@ -34,5 +34,10 @@ bool    find                (Node* node, char name[], List* list, int val_list);
 void    get_name            (char* name, char* text);
 void    print_compare       (char* name1, char* name2, List* list1, List* list2, Node* node1, Node* node2);
 Error   compare             (Tree* tree);
+void    greetings           (Tree* tree);
+Formats parse_format        (char* format);
+Formats get_format          (FILE* file, char* name_file);
+bool    have_name           (FILE* info, char* file_name);
+void    add_file            (FILE* info, char* file_name);
 
 #endif //AKINATOR_HEADER
